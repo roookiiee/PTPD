@@ -20,7 +20,7 @@ pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f ht
 * Clone PTPD code repository and install requirements
 ```bash
 # Clone PTPD code base
-git clone github~~
+git clone https://github.com/roookiiee/PTPD.git
 
 cd PTPD/
 # Install requirements
