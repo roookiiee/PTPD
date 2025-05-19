@@ -8,10 +8,6 @@ from .imagenet import ImageNet
 
 @DATASET_REGISTRY.register()
 class ImageNetV2(DatasetBase):
-    """ImageNetV2.
-
-    This dataset is used for testing only.
-    """
 
     dataset_dir = "imagenetv2"
 

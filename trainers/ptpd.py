@@ -105,17 +105,12 @@ class TextEncoder(nn.Module):
 
     def forward(self, prompts, tokenized_prompts):
 
-        # print(f'------prompts size is {prompts.size()}------')
-        # print(f'------tokenized prompts size is {tokenized_prompts.size()}------')
-
         x = prompts + self.positional_embedding.type(self.dtype)
-        x = x.permute(1, 0, 2)  # NLD -> LND
+        x = x.permute(1, 0, 2)
         x = self.transformer(x)
-        x = x.permute(1, 0, 2)  # LND -> NLD
+        x = x.permute(1, 0, 2)
         x = self.ln_final(x).type(self.dtype)
 
-        # x.shape = [batch_size, n_ctx, transformer.width]
-        # take features from the eot embedding (eot_token is the highest number in each sequence)
         x = x[torch.arange(x.shape[0]), tokenized_prompts.argmax(dim=-1)] @ self.text_projection
 
         return x
@@ -124,7 +119,6 @@ class VLPromptLearner(nn.Module):
     def __init__(self, cfg, classnames, clip_model, is_teacher):
         super().__init__()
         n_cls = len(classnames)
-        # Make sure Language depth >= 1
         assert cfg.TRAINER.PTPD.PROMPT_DEPTH_TEXT >= 1, "In Independent VL prompting, Language prompt depth should be >=1" \
                                                         "\nPlease use VPT trainer if you want to learn only vision " \
                                                         "branch"
@@ -140,7 +134,6 @@ class VLPromptLearner(nn.Module):
         self.train_modal = cfg.TRAINER.MODAL
 
         if ctx_init and n_ctx <= 4:
-            # use given words to initialize context vectors
             ctx_init = ctx_init.replace("_", " ")
             n_ctx = n_ctx
             prompt = clip.tokenize(ctx_init)
@@ -149,7 +142,6 @@ class VLPromptLearner(nn.Module):
             ctx_vectors = embedding[0, 1: 1 + n_ctx, :]
             prompt_prefix = ctx_init
         else:
-            # random initialization
             ctx_vectors = torch.empty(n_ctx, ctx_dim, dtype=dtype)
             nn.init.normal_(ctx_vectors, std=0.02)
             prompt_prefix = " ".join(["X"] * n_ctx)
@@ -161,53 +153,41 @@ class VLPromptLearner(nn.Module):
 
         classnames = [name.replace("_", " ") for name in classnames]
         prompts = [prompt_prefix + " " + name + "." for name in classnames]
-        # print(f"prompts1:{len(prompts)}")    47
-        tokenized_prompts = torch.cat([clip.tokenize(p) for p in prompts])  # (n_cls, n_tkn)
-        # print(f"tokenized_prompts:{tokenized_prompts.shape}")  [47, 77]
+        tokenized_prompts = torch.cat([clip.tokenize(p) for p in prompts])
 
         print(f'classnames size is {len(classnames)}')
 
         x_neg = ["a photo of not a {}.".replace("{}", name) for name in classnames]
-        self.x_tokenized_neg = torch.cat([clip.tokenize(i) for i in x_neg]) # [47,77]
+        self.x_tokenized_neg = torch.cat([clip.tokenize(i) for i in x_neg])
 
         with torch.no_grad():
             embedding = clip_model.token_embedding(tokenized_prompts).type(dtype)
 
         self.n_cls = n_cls
         self.n_ctx = n_ctx
-        self.tokenized_prompts = tokenized_prompts  # torch.Tensor
+        self.tokenized_prompts = tokenized_prompts
         # self.name_lens = name_lens
 
         if self.train_modal == "base2novel":
-            self.register_buffer("token_prefix", embedding[:math.ceil(self.n_cls / 2), :1, :])  # SOS
-            self.register_buffer("token_suffix", embedding[:math.ceil(self.n_cls / 2), 1 + n_ctx:, :])  # CLS, EOS
+            self.register_buffer("token_prefix", embedding[:math.ceil(self.n_cls / 2), :1, :])
+            self.register_buffer("token_suffix", embedding[:math.ceil(self.n_cls / 2), 1 + n_ctx:, :])
 
-            self.register_buffer("token_prefix2", embedding[math.ceil(self.n_cls / 2):, :1, :])  # SOS
-            self.register_buffer("token_suffix2", embedding[math.ceil(self.n_cls / 2):, 1 + n_ctx:, :])  # CLS, EOS
+            self.register_buffer("token_prefix2", embedding[math.ceil(self.n_cls / 2):, :1, :])
+            self.register_buffer("token_suffix2", embedding[math.ceil(self.n_cls / 2):, 1 + n_ctx:, :])
 
         elif self.train_modal == "cross":
-            self.register_buffer("token_prefix", embedding[:, :1, :])  # SOS
-            self.register_buffer("token_suffix", embedding[:, 1 + n_ctx:, :])  # CLS, EOS
+            self.register_buffer("token_prefix", embedding[:, :1, :])
+            self.register_buffer("token_suffix", embedding[:, 1 + n_ctx:, :])
 
-            self.register_buffer("token_prefix2", embedding[:, :1, :])  # SOS
-            self.register_buffer("token_suffix2", embedding[:, 1 + n_ctx:, :])  # CLS, EOS
+            self.register_buffer("token_prefix2", embedding[:, :1, :])
+            self.register_buffer("token_suffix2", embedding[:, 1 + n_ctx:, :])
 
     def construct_prompts(self, ctx, prefix, suffix, label=None):
-        # dim0 is either batch_size (during training) or n_cls (during testing)
-        # ctx: context tokens, with shape of (dim0, n_ctx, ctx_dim)
-        # prefix: the sos token, with shape of (n_cls, 1, ctx_dim)
-        # suffix: remaining tokens, with shape of (n_cls, *, ctx_dim)
-
-        # print(f'label is {label}')
-        # if label is not None:
-        #     prefix = prefix[label]
-        #     suffix = suffix[label]
-
         prompts = torch.cat(
             [
-                prefix,  # (dim0, 1, dim)
-                ctx,  # (dim0, n_ctx, dim)
-                suffix,  # (dim0, *, dim)
+                prefix,
+                ctx,
+                suffix,
             ],
             dim=1,
         )
@@ -218,16 +198,12 @@ class VLPromptLearner(nn.Module):
         ctx = self.ctx
         if ctx.dim() == 2:
             ctx = ctx.unsqueeze(0).expand(self.n_cls, -1, -1)
-        # print(f'ctx size is {ctx.size()}')
 
         prefix = self.token_prefix
-        # print(f'prefix size is {prefix.size()}')
 
         suffix = self.token_suffix
-        # print(f'suffix size is {suffix.size()}')
 
         if self.trainer_name == "PTPD" and self.train_modal == "base2novel":
-            # print(f'n_cls is {self.n_cls}')
             prefix = torch.cat([prefix, self.token_prefix2], dim=0)
             suffix = torch.cat([suffix, self.token_suffix2], dim=0)
 
@@ -282,7 +258,6 @@ class CustomCLIP_teacher(nn.Module):
         text_features_neg = self.clip_model.encode_text(x_features_neg.cuda())  # [47, 768]
         text_features_neg = text_features_neg / text_features_neg.norm(dim=-1, keepdim=True)
 
-        # Compute the prompted image and text features
         tokenized_prompts = self.tokenized_prompts
         text_features = self.text_encoder(prompts.cuda(), tokenized_prompts.cuda())
         text_features = text_features / text_features.norm(dim=-1, keepdim=True)
@@ -291,7 +266,6 @@ class CustomCLIP_teacher(nn.Module):
 
         image_features = self.image_encoder(image.type(self.dtype))
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-        # Compute the prompted logits
         logits = logit_scale * image_features @ text_features.t()
 
         return image_features, text_features, text_features_neg, logits
@@ -343,7 +317,6 @@ class PTPD(TrainerX):
         clip_model_teacher = load_clip_to_cpu_teacher(cfg)
 
         if cfg.TRAINER.PTPD.PREC == "fp32" or cfg.TRAINER.PTPD.PREC == "amp":
-            # CLIP's default precision is fp16
             clip_model.float()
 
         print("Building custom CLIP")

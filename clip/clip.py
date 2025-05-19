@@ -85,27 +85,7 @@ def available_models() -> List[str]:
 
 
 def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu", jit=False):
-    """Load a CLIP model
 
-    Parameters
-    ----------
-    name : str
-        A model name listed by `clip.available_models()`, or the path to a model checkpoint containing the state_dict
-
-    device : Union[str, torch.device]
-        The device to put the loaded model
-
-    jit : bool
-        Whether to load the optimized JIT model or more hackable non-JIT model (default).
-
-    Returns
-    -------
-    model : torch.nn.Module
-        The CLIP model
-
-    preprocess : Callable[[PIL.Image], torch.Tensor]
-        A torchvision transform that converts a PIL image into a tensor that the returned model can take as its input
-    """
     if name in _MODELS:
         model_path = _download(_MODELS[name])
     elif os.path.isfile(name):
@@ -130,7 +110,6 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
             model.float()
         return model, _transform(model.visual.input_resolution)
 
-    # patch the device names
     device_holder = torch.jit.trace(lambda: torch.ones([]).to(torch.device(device)), example_inputs=[])
     device_node = [n for n in device_holder.graph.findAllNodes("prim::Constant") if "Device" in repr(n)][-1]
 
@@ -152,7 +131,6 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
     patch_device(model.encode_image)
     patch_device(model.encode_text)
 
-    # patch dtype to float32 on CPU
     if str(device) == "cpu":
         float_holder = torch.jit.trace(lambda: torch.ones([]).float(), example_inputs=[])
         float_input = list(float_holder.graph.findNode("aten::to").inputs())[1]
@@ -184,24 +162,6 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
 
 
 def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: bool = False) -> torch.LongTensor:
-    """
-    Returns the tokenized representation of given input string(s)
-
-    Parameters
-    ----------
-    texts : Union[str, List[str]]
-        An input string or a list of input strings to tokenize
-
-    context_length : int
-        The context length to use; all CLIP models use 77 as the context length
-
-    truncate: bool
-        Whether to truncate the text in case its encoding is longer than the context length
-
-    Returns
-    -------
-    A two-dimensional tensor containing the resulting tokens, shape = [number of input strings, context_length]
-    """
     if isinstance(texts, str):
         texts = [texts]
 

@@ -150,11 +150,6 @@ def extend_cfg(cfg):
     cfg.TRAINER.PromptKD.TEMPERATURE = 1.0
     cfg.TRAINER.PromptKD.TEACHER_NAME = "ViT/L-14"
 
-    # KD
-    # cfg.MODEL.BACKBONE.TEACHER_NAME = "ViT/L-14"
-    # cfg.MODEL.BACKBONE.PROJECT_LAYER = 2
-    # cfg.MODEL.BACKBONE.CE_WEIGHT = 0.0
-
     cfg.TRAINER.MODAL = "base2novel"
     cfg.TRAINER.PTPD = CN()
     cfg.TRAINER.PTPD.N_CTX_VISION = 4  # number of context vectors at the vision branch
@@ -174,18 +169,14 @@ def setup_cfg(args):
     cfg = get_cfg_default()
     extend_cfg(cfg)
 
-    # 1. From the dataset config file
     if args.dataset_config_file:
         cfg.merge_from_file(args.dataset_config_file)
 
-    # 2. From the method config file
     if args.config_file:
         cfg.merge_from_file(args.config_file)
 
-    # 3. From input arguments
     reset_cfg(cfg, args)
 
-    # 4. From optional input arguments
     cfg.merge_from_list(args.opts)
 
     cfg.freeze()
@@ -204,8 +195,6 @@ def main(args):
         torch.backends.cudnn.benchmark = True
 
     print_args(args, cfg)
-    # print("Collecting env info ...")
-    # print("** System info **\n{}\n".format(collect_env_info()))
 
     trainer = build_trainer(cfg)
 

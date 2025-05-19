@@ -10,10 +10,6 @@ TO_BE_IGNORED = ["README.txt"]
 
 @DATASET_REGISTRY.register()
 class ImageNetA(DatasetBase):
-    """ImageNet-A(dversarial).
-
-    This dataset is used for testing only.
-    """
 
     dataset_dir = "imagenet-adversarial"
 

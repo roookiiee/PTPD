@@ -86,15 +86,12 @@ def setup_cfg(args):
     cfg = get_cfg_default()
     extend_cfg(cfg)
 
-    # 1. From the dataset config file
     if args.dataset_config_file:
         cfg.merge_from_file(args.dataset_config_file)
 
-    # 2. From the method config file
     if args.config_file:
         cfg.merge_from_file(args.config_file)
 
-    # 3. From input arguments
     reset_cfg(cfg, args)
 
     cfg.freeze()

@@ -75,13 +75,13 @@ class SUN397(DatasetBase):
         with open(text_file, "r") as f:
             lines = f.readlines()
             for line in lines:
-                imname = line.strip()[1:]  # remove /
+                imname = line.strip()[1:]
                 classname = os.path.dirname(imname)
                 label = cname2lab[classname]
                 impath = os.path.join(self.image_dir, imname)
 
-                names = classname.split("/")[1:]  # remove 1st letter
-                names = names[::-1]  # put words like indoor/outdoor at first
+                names = classname.split("/")[1:]
+                names = names[::-1]
                 classname = " ".join(names)
 
                 item = Datum(impath=impath, label=label, classname=classname)

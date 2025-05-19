@@ -10,10 +10,6 @@ TO_BE_IGNORED = ["README.txt"]
 
 @DATASET_REGISTRY.register()
 class ImageNetR(DatasetBase):
-    """ImageNet-R(endition).
-
-    This dataset is used for testing only.
-    """
 
     dataset_dir = "imagenet-rendition"
 

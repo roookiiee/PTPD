@@ -149,14 +149,7 @@ class OxfordPets(DatasetBase):
     
     @staticmethod
     def subsample_classes(*args, subsample="all"):
-        """Divide classes into two groups. The first group
-        represents base classes while the second group represents
-        new classes.
 
-        Args:
-            args: a list of datasets, e.g. train, val and test.
-            subsample (str): what classes to subsample.
-        """
         assert subsample in ["all", "base", "new"]
 
         if subsample == "all":
@@ -174,9 +167,9 @@ class OxfordPets(DatasetBase):
         
         print(f"SUBSAMPLE {subsample.upper()} CLASSES!")
         if subsample == "base":
-            selected = labels[:m]  # take the first half
+            selected = labels[:m]
         else:
-            selected = labels[m:]  # take the second half
+            selected = labels[m:]
         relabeler = {y: y_new for y_new, y in enumerate(selected)}
         
         output = []

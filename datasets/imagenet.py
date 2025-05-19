@@ -17,7 +17,6 @@ class ImageNet(DatasetBase):
         root = os.path.abspath(os.path.expanduser(cfg.DATASET.ROOT))
         self.dataset_dir = os.path.join(root, self.dataset_dir)
         
-        # self.dataset_dir = '/root/imagenet/'
         self.image_dir = os.path.join(self.dataset_dir, "images")
         self.preprocessed = os.path.join(self.dataset_dir, "preprocessed.pkl")
         self.split_fewshot_dir = os.path.join(self.dataset_dir, "split_fewshot")
@@ -32,8 +31,6 @@ class ImageNet(DatasetBase):
             text_file = os.path.join(self.dataset_dir, "classnames.txt")
             classnames = self.read_classnames(text_file)
             train = self.read_data(classnames, "train")
-            # Follow standard practice to perform evaluation on the val set
-            # Also used as the val set (so evaluate the last-step model)
             test = self.read_data(classnames, "val")
 
             preprocessed = {"train": train, "test": test}
@@ -77,10 +74,7 @@ class ImageNet(DatasetBase):
 
 
     @staticmethod
-    def read_classnames(text_file):  # 得到所有的class name
-        """Return a dictionary containing
-        key-value pairs of <folder name>: <class name>.
-        """
+    def read_classnames(text_file):
         classnames = OrderedDict()
         with open(text_file, "r") as f:
             lines = f.readlines()
@@ -89,10 +83,10 @@ class ImageNet(DatasetBase):
                 folder = line[0]
                 classname = " ".join(line[1:])
                 classnames[folder] = classname
-        return classnames  # 是一个array，数值为foldname: classname
+        return classnames
 
     def read_data(self, classnames, split_dir):
-        split_dir = os.path.join(self.image_dir, split_dir)  # 分别对应train, val
+        split_dir = os.path.join(self.image_dir, split_dir)
         folders = sorted(f.name for f in os.scandir(split_dir) if f.is_dir())
         items = []
 

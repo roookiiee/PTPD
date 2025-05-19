@@ -73,7 +73,7 @@ class StanfordCars(DatasetBase):
             imname = anno_file[i]["fname"][0]
             impath = os.path.join(self.dataset_dir, image_dir, imname)
             label = anno_file[i]["class"][0, 0]
-            label = int(label) - 1  # convert to 0-based index
+            label = int(label) - 1
             classname = meta_file[label][0]
             names = classname.split(" ")
             year = names.pop(-1)
