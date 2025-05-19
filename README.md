@@ -48,8 +48,8 @@ sh scripts/ptpd/base2new_train.sh imagenet 2
 # seed=3
 sh scripts/ptpd/base2new_train.sh imagenet 3
 
-# dataset=caltech101, seed=1
-sh scripts/ptpd/base2new_train.sh caltech101 1
+# dataset=dtd, seed=1
+sh scripts/ptpd/base2new_train.sh dtd 1
 ```
 
 4. The output results will be automatically saved at `output/base2new/train_base/${DATASET}/shots_${SHOTS}/${TRAINER}/${CFG}/seed_${SEED}`.
