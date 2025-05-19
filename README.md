@@ -1,55 +1,123 @@
-# PTPD: Unsupervised Prompt Distillation for Vision-Language Models 
+# PTPD: Unsupervised Prompt Distillation for Vision-Language Models
 
-<!-- This is the official PyToch implementation for "PTPD: Unsupervised Prompt Distillation for Vision-Language Models." -->
+<!-- Official PyTorch implementation of "PTPD: Unsupervised Prompt Distillation for Vision-Language Models" -->
 
+## Getting Started
 
-## Running
-1. Create the environment and install Dassl.pytorch library. Please follow the instructions detailed in [INSTALL.md](docs/INSTALL.md).
+### 1. Environment Setup
 
-2. (1) Pre-train your own large teacher CLIP model (See below) or (2) use our publicly released pre-trained teacher ViT-L/14 CLIP models. (**Highly Recommended**)   
-Our pre-trained teacher models can download in [Project](https://github.com/zhengli97/PromptKD).
-After obtaining the teacher model, unzip these files and place the model in the `./teacher_model` folder.   
-The accuracy of each teacher model is shown in Tables ? and ? in the supplementary material of the paper.  
-3.  Download the original ViT-B/16 and ViT-L/14 CLIP model weights from the official OpenAI website. Then place these models in the `./clip` folder.  
-[[ViT-B/16 CLIP](https://openaipublic.azureedge.net/clip/models/5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f/ViT-B-16.pt)] [[ViT-L/14 CLIP](https://openaipublic.azureedge.net/clip/models/b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/ViT-L-14.pt)]
+Begin by setting up the environment and installing the necessary dependencies for Dassl.pytorch.  
+Please follow the steps outlined in [`docs/INSTALL.md`](docs/INSTALL.md) for detailed guidance.
 
-4. Prepare the dataset. Please follow the instructions detailed in [DATASETS.md](docs/DATASETS.md).
+---
 
-### Train Your Teacher Model (Optional)
+### 2. Preparing the Teacher Model (Recommended: Pretrained)
 
-In our paper, we default use PromptSRC to pre-train our ViT-L/14 CLIP teacher model. We have already provided the config file in `configs/trainers/PromptSRC/vit_l14_c2_ep20_batch8_4+4ctx.yaml`
+You can either:
 
-If you want to train your own teacher model, first you should change `scripts/promptsrc/base2new_train.sh line 11 CFG=vit_b16_c2_ep20_batch4_4+4ctx` to `vit_l14_c2_ep20_batch8_4+4ctx`.
-Then follow the instructions listed in `docs/PromptSRC.md` and run the script.
+- **Use pretrained ViT-L/14 teacher models** (recommended):  
+  Download them from [PromptKD](https://github.com/zhengli97/PromptKD), unzip, and place the model files in the `./teacher_model` folder.
 
-**Important Note:**  
-The accuracy of your own teacher model may vary depending on your computing environment. To ensure that your teacher model is adequate for distillation, please refer to Appendix Table 10 to check whether your model achieves appropriate accuracy. 
+- **Train your own teacher model** (optional):  
+  Instructions are provided in the section [Training Your Own Teacher Model](#training-your-own-teacher-model-optional).
 
-If your teacher model cannot achieve the corresponding accuracy or cannot be trained due to computational constraints, I highly recommend that you use our publicly available pre-trained models for distillation.
+> Model accuracies are reported in Table 1 in the supplementary materials of the paper.
 
-### Running PTPD 
+---
 
-#### (1) Base-to-Novel Experiments.
+### 3. Download CLIP Base Model Weights
 
-1. The base-to-novel experimental settings are provided in the config file at `configs/trainers/ptpd/vit_b16_c2_ep20_batch8_4+4ctx.yaml`. You can modify the hyper-parameters in this config file according to your needs.
+Download the original CLIP weights and place them in the `./clip` directory:
 
-2. Change the dataset path in `scripts/ptpd/base2new_train.sh line 4` to your current path.
+- [ViT-B/16](https://openaipublic.azureedge.net/clip/models/5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f/ViT-B-16.pt)  
+- [ViT-L/14](https://openaipublic.azureedge.net/clip/models/b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/ViT-L-14.pt)
 
-3. Run the commands below to train PTPD on the specified dataset.
+---
 
-For example:
+### 4. Prepare the Dataset
+
+Follow the dataset preparation guide in [`docs/DATASETS.md`](docs/DATASETS.md) to structure and load datasets correctly.
+
+---
+
+## Training Your Own Teacher Model (Optional)
+
+We use the PromptSRC method by default to pretrain the ViT-L/14 teacher.  
+You’ll find the corresponding config here:
+
 ```
-# dataset=imagenet, seed=1 
-sh scripts/ptpd/base2new_train.sh imagenet 1
-
-# seed=2
-sh scripts/ptpd/base2new_train.sh imagenet 2
-
-# seed=3
-sh scripts/ptpd/base2new_train.sh imagenet 3
-
-# dataset=dtd, seed=1
-sh scripts/ptpd/base2new_train.sh dtd 1
+configs/trainers/PromptSRC/vit_l14_c2_ep20_batch8_4+4ctx.yaml
 ```
 
-4. The output results will be automatically saved at `output/base2new/train_base/${DATASET}/shots_${SHOTS}/${TRAINER}/${CFG}/seed_${SEED}`.
+To train the model:
+
+1. Edit the script `scripts/promptsrc/base2new_train.sh`
+
+2. Replace line 11:
+
+   ```bash
+   CFG=vit_b16_c2_ep20_batch4_4+4ctx
+   ```
+
+   with:
+
+   ```bash
+   CFG=vit_l14_c2_ep20_batch8_4+4ctx
+   ```
+
+3. Then follow the training steps in [`docs/PromptSRC.md`](docs/PromptSRC.md)
+
+> **Note:** Your model's performance may vary by hardware. Refer to Appendix Table 10 to verify it’s suitable for use in distillation. If training is too resource-intensive, we recommend using the pretrained teacher.
+
+---
+
+## Running PTPD
+
+### Base-to-Novel Experiments
+
+1. Main config file:
+
+   ```
+   configs/trainers/ptpd/vit_b16_c2_ep20_batch8_4+4ctx.yaml
+   ```
+
+   Modify hyperparameters if needed.
+
+2. Update the dataset path:  
+   In `scripts/ptpd/base2new_train.sh`, edit **line 4** to point to your dataset location.
+
+3. Run training commands:
+
+   ```bash
+   # For ImageNet with seed 1
+   sh scripts/ptpd/base2new_train.sh imagenet 1
+   
+   # Other seeds
+   sh scripts/ptpd/base2new_train.sh imagenet 2
+   sh scripts/ptpd/base2new_train.sh imagenet 3
+   
+   # Using DTD dataset
+   sh scripts/ptpd/base2new_train.sh dtd 1
+   ```
+
+---
+
+### Output Directory
+
+Training results will be saved to:
+
+```
+output/base2new/train_base/${DATASET}/shots_${SHOTS}/${TRAINER}/${CFG}/seed_${SEED}
+```
+
+Where:
+
+- `${DATASET}` = dataset name (e.g., `imagenet`, `dtd`)  
+- `${SHOTS}` = number of shots per class  
+- `${TRAINER}` = usually `ptpd`  
+- `${CFG}` = config file name  
+- `${SEED}` = random seed used
+
+---
+
+Feel free to reach out if you'd like this converted to a PDF or need additional customization!
