@@ -2,7 +2,7 @@
 
 # custom config
 DATA="/path/to/dataset/folder"
-TRAINER=ptpd
+TRAINER=PTPD
 
 DATASET=$1 # 'imagenet' 'caltech101' 'dtd' 'eurosat' 'fgvc_aircraft' 'oxford_flowers' 'food101' 'oxford_pets' 'stanford_cars' 'sun397' 'ucf101'
 SEED=$2

@@ -14,7 +14,7 @@ from clip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 from .imagenet_templates import IMAGENET_TEMPLATES
 from tqdm import tqdm
 import math
-from thop import profile
+# from thop import profile
 import time
 from clip.model import VisionTransformer, convert_weights
 
